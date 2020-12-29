@@ -114,15 +114,10 @@ Tile 3079:
 ..#.###...
 `,
     part1: 20899048083289,
-    part2: undefined,
+    part2: 273,
     extra: {},
   },
 ];
-
-interface Best {
-  tile: TransformedTile;
-  length: number;
-}
 
 export enum Transform {
   Rot0,
@@ -141,30 +136,103 @@ export enum Side {
   Bottom,
   Left,
 }
-const tileSideLen = 10;
+const borderedSideLen = 10;
+const strippedSideLen = 8;
+const monster = [
+  "                  # ",
+  "#    ##    ##    ###",
+  " #  #  #  #  #  #   ",
+];
+
+const monsterSections = 15;
 
 function solution(input: string) {
-  let tiles = transformInput(input);
-  return { part1: part1(tiles), part2: part2() };
+  let imageTiles = transformInput(input);
+  return { part1: part1(imageTiles), part2: part2(imageTiles) };
 }
 
-export function transformInput(input: string): Tile[] {
-  return _(input.trim())
+export function transformInput(input: string) {
+  let tiles = _(input.trim())
     .split("\n\n")
     .map((tile) => {
       let id = +tile.slice(5, 9);
       let data = _.drop(tile, 11).join("").split("\n");
-      return new Tile(id, data);
+      return new BorderedTile(id, data);
     })
     .value();
+  return matchEdges(tiles);
 }
 
-function part1(tiles: Tile[]) {
+function part1(imageTiles: TransformedTile[][]) {
+  let endIdx = imageTiles.length - 1;
+  return (
+    imageTiles[0][0].tile.id *
+    imageTiles[endIdx][0].tile.id *
+    imageTiles[0][endIdx].tile.id *
+    imageTiles[endIdx][endIdx].tile.id
+  );
+}
+
+function part2(imageTiles: TransformedTile[][]) {
+  let image = buildImage(imageTiles);
+
+  let roughness = 0;
+  for (let row = 0; row < image.length; row++) {
+    for (let col = 0; col < image.length; col++) {
+      roughness += +(image[row][col] === "#");
+    }
+  }
+
+  let monsterH = monster.length;
+  let monsterW = monster[0].length;
+  let lastRow = image.length - monsterH + 1;
+  let lastCol = image[0].length - monsterW + 1;
+
+  for (
+    let transform = Transform.Rot0;
+    transform <= Transform.Rot270Flip;
+    transform++
+  ) {
+    let rotFlipped = transformSquare(image, transform);
+    for (let rs = 0; rs < lastRow; rs++) {
+      for (let cs = 0; cs < lastCol; cs++) {
+        let imgSection = rotFlipped
+          .slice(rs, rs + monsterH)
+          .map((row) => row.slice(cs, cs + monsterW));
+        let sectionsFound = 0;
+        for (let row = 0; row < monsterH; row++) {
+          for (let col = 0; col < monsterW; col++) {
+            if (imgSection[row][col] === monster[row][col]) {
+              sectionsFound++;
+            }
+          }
+        }
+        if (sectionsFound === monsterSections) {
+          roughness -= sectionsFound;
+        }
+      }
+    }
+  }
+
+  return roughness;
+}
+
+function buildImage(imageTiles: TransformedTile[][]): string[] {
+  return _.flatMap(imageTiles, (row) =>
+    _(row)
+      .invokeMap(TransformedTile.prototype.makeConcrete)
+      .thru((tileRows) => _.zip(...tileRows))
+      .invokeMap(Array.prototype.join, "")
+      .value()
+  );
+}
+
+function matchEdges(tiles: BorderedTile[]) {
   let imageSide = Math.sqrt(tiles.length);
   let image: TransformedTile[][] = Array(imageSide)
     .fill(0)
     .map(() => Array(imageSide));
-  function solve(row: number, col: number, tiles: Tile[]): boolean {
+  function solve(row: number, col: number, tiles: BorderedTile[]): boolean {
     if (tiles.length === 0) {
       return true;
     }
@@ -195,36 +263,35 @@ function part1(tiles: Tile[]) {
     }
     return false;
   }
-  let start = performance.now();
   solve(0, 0, Array.from(tiles));
-  let end = performance.now();
-  console.log(end - start);
-
-  return (
-    image[0][0].tile.id *
-    image[imageSide - 1][0].tile.id *
-    image[0][imageSide - 1].tile.id *
-    image[imageSide - 1][imageSide - 1].tile.id
-  );
+  return image;
 }
 
-function part2() {}
+class TransformedTile {
+  readonly tile: BorderedTile;
+  readonly transform: Transform;
 
-function printSolution(image: TransformedTile[][]) {
-  for (let row of image) {
-    let tileRows = _(row)
-      .invokeMap(TransformedTile.prototype.toString)
-      .invokeMap(String.prototype.split, "\n")
-      .thru((strings) => _.zip(...strings))
-      .invokeMap(Array.prototype.join, " ")
-      .join("\n");
-    console.log(tileRows);
+  constructor(tile: BorderedTile, transform: Transform) {
+    this.tile = tile;
+    this.transform = transform;
+  }
+
+  side(side: Side) {
+    return this.tile.side(side, this.transform);
+  }
+
+  toString() {
+    return this.tile.sidesToString(this.transform);
+  }
+
+  makeConcrete(): string[] {
+    return transformSquare(this.tile.stripBorders(), this.transform);
   }
 }
 
-class Tile {
-  id: number;
-  data: string[];
+class BorderedTile {
+  readonly id: number;
+  readonly data: string[];
   private sideLookup: number[];
 
   constructor(id: number, data: string[]) {
@@ -236,14 +303,14 @@ class Tile {
 
     let sides = [
       this.data[0],
-      this.data.reduce((side, row) => side + row[tileSideLen - 1], ""),
-      this.data[tileSideLen - 1],
+      this.data.reduce((side, row) => side + row[borderedSideLen - 1], ""),
+      this.data[borderedSideLen - 1],
       this.data.reduce((side, row) => side + row[0], ""),
-    ].map(Tile.sideToNum);
+    ].map(BorderedTile.sideToNum);
     let reversed = sides.reduce((reversed, side) => {
       let reversedSide = 0;
       let _side = side;
-      for (let i = 0; i < tileSideLen; i++) {
+      for (let i = 0; i < borderedSideLen; i++) {
         reversedSide = reversedSide * 2 + (_side % 2);
         _side = Math.trunc(_side / 2);
       }
@@ -281,6 +348,15 @@ class Tile {
     return this.sideLookup[transform * 4 + side];
   }
 
+  stripBorders() {
+    return _.invokeMap(
+      this.data.slice(1, borderedSideLen - 1),
+      String.prototype.slice,
+      1,
+      borderedSideLen - 1
+    );
+  }
+
   private static sideToNum(side: string): number {
     return Array.from(side).reduce((num, c) => {
       switch (c) {
@@ -297,7 +373,7 @@ class Tile {
   // for debugging
   private static sideToString(side: number): string {
     let str = "";
-    for (let i = 0; i < tileSideLen; i++) {
+    for (let i = 0; i < borderedSideLen; i++) {
       str = (side % 2 ? "#" : ".") + str;
       side = Math.trunc(side / 2);
     }
@@ -307,11 +383,11 @@ class Tile {
   sidesToString(transform: Transform) {
     let sides = this.sideLookup
       .slice(transform * 4, transform * 4 + 4)
-      .map(Tile.sideToString);
+      .map(BorderedTile.sideToString);
     let fill = Array(8).fill(" ").join("");
 
     let str = sides[Side.Top];
-    for (let i = 1; i < tileSideLen - 1; i++) {
+    for (let i = 1; i < borderedSideLen - 1; i++) {
       str += "\n" + sides[Side.Left][i] + fill + sides[Side.Right][i];
     }
     str += "\n" + sides[Side.Bottom];
@@ -327,24 +403,72 @@ class Tile {
   }
 }
 
-class TransformedTile {
-  readonly tile: Tile;
-  readonly transform: Transform;
-
-  constructor(tile: Tile, transform: Transform) {
-    this.tile = tile;
-    this.transform = transform;
+function transformSquare(square: string[], transform: Transform): string[] {
+  let transformed = _(Array.from(square));
+  switch (transform) {
+    case Transform.Rot0: {
+      transformed = transformed;
+      break;
+    }
+    case Transform.Rot90: {
+      transformed = transformed.reverse().thru(transpose);
+      break;
+    }
+    case Transform.Rot180: {
+      transformed = transformed
+        .reverse()
+        .map(flipString)
+        .invokeMap(Array.prototype.join, "");
+      break;
+    }
+    case Transform.Rot270: {
+      transformed = transformed.thru(transpose).reverse();
+      break;
+    }
+    case Transform.Rot0Flip: {
+      transformed = transformed.map(flipString);
+      break;
+    }
+    case Transform.Rot90Flip: {
+      transformed = transformed.thru(transpose);
+      break;
+    }
+    case Transform.Rot180Flip: {
+      transformed = transformed.reverse();
+      break;
+    }
+    case Transform.Rot270Flip: {
+      transformed = transformed.reverse().thru(transpose).reverse();
+      break;
+    }
   }
 
-  side(side: Side) {
-    return this.tile.side(side, this.transform);
-  }
+  return transformed.value();
+}
 
-  toString() {
-    return this.tile.sidesToString(this.transform);
-  }
+function transpose(array: string[]) {
+  return _.zip(...array.map((s) => Array.from(s))).map((a) => a.join(""));
+}
+function flipString(str: string): string {
+  return Array.prototype.reduceRight.apply(str, [
+    (s, c) => s + c,
+    "",
+  ]) as string;
 }
 
 let program = buildCommandline(solution, testCases);
 
 program.parse(process.argv);
+
+// Debugging stuff
+function printEdges(image: TransformedTile[][]) {
+  for (let row of image) {
+    let tileRows = _(row)
+      .invokeMap(TransformedTile.prototype.toString)
+      .invokeMap(String.prototype.split, "\n")
+      .thru((strings) => _.zip(...strings))
+      .invokeMap(Array.prototype.join, " ")
+      .join("\n");
+    console.log(tileRows);
+  }
+}
