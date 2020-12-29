@@ -164,10 +164,10 @@ function part1(tiles: Tile[]) {
   let image: TransformedTile[][] = Array(imageSide)
     .fill(0)
     .map(() => Array(imageSide));
-  let mem = new Map<string, Best>();
-  function solve(row: number, col: number, tiles: Tile[]): number {
-    let targetLength = tiles.length; // fit all the tiles
-    let best: Best | undefined;
+  function solve(row: number, col: number, tiles: Tile[]): boolean {
+    if (tiles.length === 0) {
+      return true;
+    }
 
     let above = image[row - 1]?.[col]?.side(Side.Bottom) || "edge";
     let left = image[row]?.[col - 1]?.side(Side.Right) || "edge";
@@ -175,57 +175,28 @@ function part1(tiles: Tile[]) {
     let nextCol = (col + 1) % imageSide;
     let nextRow = row + +(col + 1 === imageSide);
 
-    let previousBest =
-      mem.get([above, left].join()) ||
-      mem.get(["edge", left].join()) ||
-      mem.get([above, "edge"].join());
-
-    function* transforms() {
-      if (previousBest && tiles.includes(previousBest.tile.tile)) {
-        _.pull(tiles, previousBest.tile.tile);
-        yield previousBest.tile;
-      }
-
-      for (let tile of tiles) {
-        for (
-          let transform = Transform.Rot0;
-          transform <= Transform.Rot270Flip;
-          transform++
-        ) {
-          yield new TransformedTile(tile, transform);
-        }
-      }
-    }
-
-    for (let tile of transforms()) {
-      if (
-        (above === "edge" || above === tile.side(Side.Top)) &&
-        (left === "edge" || left === tile.side(Side.Left))
+    for (let tile of tiles) {
+      for (
+        let transform = Transform.Rot0;
+        transform <= Transform.Rot270Flip;
+        transform++
       ) {
-        image[row][col] = tile;
-        let solutionLength =
-          solve(nextRow, nextCol, _.without(tiles, tile.tile)) + 1;
-
-        if (solutionLength === targetLength) {
-          return solutionLength;
-        }
-        if (!best || solutionLength > best.length) {
-          best = { tile, length: solutionLength };
+        let transformed = new TransformedTile(tile, transform);
+        if (
+          (above === "edge" || above === transformed.side(Side.Top)) &&
+          (left === "edge" || left === transformed.side(Side.Left))
+        ) {
+          image[row][col] = transformed;
+          if (solve(nextRow, nextCol, _.without(tiles, tile))) {
+            return true;
+          }
         }
       }
     }
-
-    if (best && (!previousBest || best.length > previousBest.length)) {
-      mem.set(
-        [above, left].join(),
-        best as { tile: TransformedTile; length: number }
-      );
-    }
-    if (best) return best.length;
-    else return 0;
+    return false;
   }
   let start = performance.now();
-  let length = solve(0, 0, Array.from(tiles));
+  solve(0, 0, Array.from(tiles));
   let end = performance.now();
   console.log(end - start);
 
