@@ -1,0 +1,11 @@
+{
+  "extends": "@tsconfig/node14/tsconfig.json",
+
+  "compilerOptions": {
+    "outDir": "build",
+    "lib": ["es2020", "esnext.string"]
+  },
+
+  "include": ["*.ts", "*.js"],
+  "exclude": ["dayXX.ts"]
+}
