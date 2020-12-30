@@ -272,10 +272,6 @@ class TransformedTile {
     return this.tile.side(side, this.transform);
   }
 
-  toString() {
-    return this.tile.sidesToString(this.transform);
-  }
-
   makeConcrete(): string[] {
     return transformSquare(this.tile.stripBorders(), this.transform);
   }
@@ -361,38 +357,6 @@ class BorderedTile {
       }
     }, 0);
   }
-
-  // for debugging
-  private static sideToString(side: number): string {
-    let str = "";
-    for (let i = 0; i < borderedSideLen; i++) {
-      str = (side % 2 ? "#" : ".") + str;
-      side = Math.trunc(side / 2);
-    }
-    return str;
-  }
-
-  sidesToString(transform: Transform) {
-    let sides = this.sideLookup
-      .slice(transform * 4, transform * 4 + 4)
-      .map(BorderedTile.sideToString);
-    let fill = Array(8).fill(" ").join("");
-
-    let str = sides[Side.Top];
-    for (let i = 1; i < borderedSideLen - 1; i++) {
-      str += "\n" + sides[Side.Left][i] + fill + sides[Side.Right][i];
-    }
-    str += "\n" + sides[Side.Bottom];
-    return str;
-  }
-
-  printData() {
-    this.data.forEach((line) => console.log(line));
-  }
-
-  printSides(transform: Transform) {
-    console.log(this.sidesToString(transform));
-  }
 }
 
 function transformSquare(square: string[], transform: Transform): string[] {
@@ -450,16 +414,3 @@ function flipString(str: string): string {
 let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);
-
-// Debugging stuff
-function printEdges(image: TransformedTile[][]) {
-  for (let row of image) {
-    let tileRows = _(row)
-      .invokeMap(TransformedTile.prototype.toString)
-      .invokeMap(String.prototype.split, "\n")
-      .thru((strings) => _.zip(...strings))
-      .invokeMap(Array.prototype.join, " ")
-      .join("\n");
-    console.log(tileRows);
-  }
-}
