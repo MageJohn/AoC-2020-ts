@@ -1,7 +1,7 @@
 import { buildCommandline } from "./AoC";
 import _ from "lodash";
 
-export const testCases = [
+const testCases = [
   {
     name: "Page example",
     input: `Tile 2311:
@@ -117,7 +117,7 @@ Tile 3079:
   },
 ];
 
-export enum Transform {
+enum Transform {
   Rot0,
   Rot90,
   Rot180,
@@ -128,7 +128,7 @@ export enum Transform {
   Rot270Flip,
 }
 
-export enum Side {
+enum Side {
   Top,
   Right,
   Bottom,
@@ -144,7 +144,9 @@ const monster = [
 
 const monsterSections = 15;
 
-export function preprocess(input: string) {
+type Args = { tiles: BorderedTile[]; image: TransformedTile[][] | null };
+
+function preprocess(input: string): Args {
   let tiles = _(input.trim())
     .split("\n\n")
     .map((tile) => {
@@ -153,20 +155,56 @@ export function preprocess(input: string) {
       return new BorderedTile(id, data);
     })
     .value();
-  return matchEdges(tiles);
+  return { tiles, image: null };
 }
 
-function part1(imageTiles: TransformedTile[][]) {
-  let endIdx = imageTiles.length - 1;
+function part1(args: Args) {
+  let imageSide = Math.sqrt(args.tiles.length);
+  let image: TransformedTile[][] = Array(imageSide)
+    .fill(0)
+    .map(() => Array(imageSide));
+  function solve(row: number, col: number, tiles: BorderedTile[]): boolean {
+    if (tiles.length === 0) {
+      return true;
+    }
+
+    let above = image[row - 1]?.[col]?.side(Side.Bottom);
+    let left = image[row]?.[col - 1]?.side(Side.Right);
+
+    let nextCol = (col + 1) % imageSide;
+    let nextRow = row + +(col + 1 === imageSide);
+
+    for (let i = 0, e = tiles.length; i < e; i++) {
+      let tile = tiles[i];
+      for (let tr = Transform.Rot0; tr <= Transform.Rot270Flip; tr++) {
+        let transformed = new TransformedTile(tile, tr);
+        if (
+          (above == null || above === transformed.side(Side.Top)) &&
+          (left == null || left === transformed.side(Side.Left))
+        ) {
+          image[row][col] = transformed;
+          let without = tiles.slice(0, i).concat(tiles.slice(i + 1));
+          if (solve(nextRow, nextCol, without)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+  solve(0, 0, Array.from(args.tiles));
+  args.image = image;
+  let endIdx = image.length - 1;
   return (
-    imageTiles[0][0].tile.id *
-    imageTiles[endIdx][0].tile.id *
-    imageTiles[0][endIdx].tile.id *
-    imageTiles[endIdx][endIdx].tile.id
+    image[0][0].tile.id *
+    image[endIdx][0].tile.id *
+    image[0][endIdx].tile.id *
+    image[endIdx][endIdx].tile.id
   );
 }
 
-function part2(imageTiles: TransformedTile[][]) {
+function part2({ image: imageTiles }: Args) {
+  if (imageTiles == null) throw new Error("No image passed");
   let image = buildImage(imageTiles);
   let imgLen = image.length;
 
@@ -217,44 +255,6 @@ function buildImage(imageTiles: TransformedTile[][]): string[] {
       .invokeMap(Array.prototype.join, "")
       .value()
   );
-}
-
-function matchEdges(tiles: BorderedTile[]) {
-  let imageSide = Math.sqrt(tiles.length);
-  let image: TransformedTile[][] = Array(imageSide)
-    .fill(0)
-    .map(() => Array(imageSide));
-  function solve(row: number, col: number, tiles: BorderedTile[]): boolean {
-    if (tiles.length === 0) {
-      return true;
-    }
-
-    let above = image[row - 1]?.[col]?.side(Side.Bottom);
-    let left = image[row]?.[col - 1]?.side(Side.Right);
-
-    let nextCol = (col + 1) % imageSide;
-    let nextRow = row + +(col + 1 === imageSide);
-
-    for (let i = 0, e = tiles.length; i < e; i++) {
-      let tile = tiles[i];
-      for (let tr = Transform.Rot0; tr <= Transform.Rot270Flip; tr++) {
-        let transformed = new TransformedTile(tile, tr);
-        if (
-          (above == null || above === transformed.side(Side.Top)) &&
-          (left == null || left === transformed.side(Side.Left))
-        ) {
-          image[row][col] = transformed;
-          let without = tiles.slice(0, i).concat(tiles.slice(i + 1));
-          if (solve(nextRow, nextCol, without)) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-  solve(0, 0, Array.from(tiles));
-  return image;
 }
 
 class TransformedTile {
