@@ -135,6 +135,7 @@ export enum Side {
   Bottom,
   Left,
 }
+
 const borderedSideLen = 10;
 const monster = [
   "                  # ",
@@ -168,11 +169,13 @@ function part1(imageTiles: TransformedTile[][]) {
 
 function part2(imageTiles: TransformedTile[][]) {
   let image = buildImage(imageTiles);
+  let imgLen = image.length;
 
   let roughness = 0;
-  for (let row = 0; row < image.length; row++) {
-    for (let col = 0; col < image.length; col++) {
-      roughness += +(image[row][col] === "#");
+  for (let row = 0; row < imgLen; row++) {
+    let imgRow = image[row];
+    for (let col = 0; col < imgLen; col++) {
+      roughness += +(imgRow[col] === "#");
     }
   }
 
@@ -189,13 +192,11 @@ function part2(imageTiles: TransformedTile[][]) {
     let rotFlipped = transformSquare(image, transform);
     for (let rs = 0; rs < lastRow; rs++) {
       for (let cs = 0; cs < lastCol; cs++) {
-        let imgSection = rotFlipped
-          .slice(rs, rs + monsterH)
-          .map((row) => row.slice(cs, cs + monsterW));
         let sectionsFound = 0;
         for (let row = 0; row < monsterH; row++) {
+          let rfRow = rotFlipped[row + rs];
           for (let col = 0; col < monsterW; col++) {
-            if (imgSection[row][col] === monster[row][col]) {
+            if (rfRow[col + cs] === monster[row][col]) {
               sectionsFound++;
             }
           }
@@ -230,25 +231,23 @@ function matchEdges(tiles: BorderedTile[]) {
       return true;
     }
 
-    let above = image[row - 1]?.[col]?.side(Side.Bottom) || "edge";
-    let left = image[row]?.[col - 1]?.side(Side.Right) || "edge";
+    let above = image[row - 1]?.[col]?.side(Side.Bottom);
+    let left = image[row]?.[col - 1]?.side(Side.Right);
 
     let nextCol = (col + 1) % imageSide;
     let nextRow = row + +(col + 1 === imageSide);
 
-    for (let tile of tiles) {
-      for (
-        let transform = Transform.Rot0;
-        transform <= Transform.Rot270Flip;
-        transform++
-      ) {
-        let transformed = new TransformedTile(tile, transform);
+    for (let i = 0, e = tiles.length; i < e; i++) {
+      let tile = tiles[i];
+      for (let tr = Transform.Rot0; tr <= Transform.Rot270Flip; tr++) {
+        let transformed = new TransformedTile(tile, tr);
         if (
-          (above === "edge" || above === transformed.side(Side.Top)) &&
-          (left === "edge" || left === transformed.side(Side.Left))
+          (above == null || above === transformed.side(Side.Top)) &&
+          (left == null || left === transformed.side(Side.Left))
         ) {
           image[row][col] = transformed;
-          if (solve(nextRow, nextCol, _.without(tiles, tile))) {
+          let without = tiles.slice(0, i).concat(tiles.slice(i + 1));
+          if (solve(nextRow, nextCol, without)) {
             return true;
           }
         }
