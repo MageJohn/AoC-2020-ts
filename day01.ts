@@ -14,28 +14,22 @@ const testCases = [
   },
 ];
 
-function solution(input: string) {
-  let report = input
+function preprocess(input: string) {
+  return input
     .trim()
     .split("\n")
     .map((x: string) => parseInt(x, 10))
     .sort((a: number, b: number) => a - b);
-
-  let solution1 = part1(report, 2020);
-
-  return {
-    part1: solution1.a * solution1.b,
-    part2: part2(report, 2020),
-  };
 }
 
-function part1(report: number[], total: number) {
-  let solution = findPair(report, total);
+function part1(report: number[]) {
+  let solution = findPair(report, 2020);
   if (!solution) throw new Error("No solution found");
-  return solution;
+  return solution.a * solution.b;
 }
 
-function part2(report: number[], total: number) {
+function part2(report: number[]) {
+  let total = 2020;
   for (let i = 0; i < report.length; i++) {
     let target = total - report[i];
     let target_parts = findPair(report.slice(i + 1), target);
@@ -57,6 +51,6 @@ function findPair(report: number[], sumTo: number) {
   }
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

@@ -24,30 +24,29 @@ b
   },
 ];
 
-function solution(input: string) {
-  let groups = input.trim().split("\n\n");
-
-  return {
-    part1: sumSetSizes(part1(groups)),
-    part2: sumSetSizes(part2(groups)),
-  };
+function preprocess(input: string) {
+  return input.trim().split("\n\n");
 }
 
 function part1(groups: string[]) {
-  return groups.map((g) =>
-    g
-      .split("")
-      .filter((c) => c != "\n")
-      .reduce((set, q) => set.add(q), new Set())
+  return sumSetSizes(
+    groups.map((g) =>
+      g
+        .split("")
+        .filter((c) => c != "\n")
+        .reduce((set, q) => set.add(q), new Set())
+    )
   );
 }
 
 function part2(groups: string[]) {
-  return groups.map((g) =>
-    g
-      .split("\n")
-      .map((m) => new Set(m))
-      .reduce((s, m) => intersection(s, m))
+  return sumSetSizes(
+    groups.map((g) =>
+      g
+        .split("\n")
+        .map((m) => new Set(m))
+        .reduce((s, m) => intersection(s, m))
+    )
   );
 }
 
@@ -65,6 +64,6 @@ function intersection<T>(setA: Set<T>, setB: Set<T>): Set<T> {
   return _intersection;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

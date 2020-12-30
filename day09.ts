@@ -1,9 +1,10 @@
-import { buildCommandline, ExtraArgs } from "./AoC";
+import { buildCommandline } from "./AoC";
 
 const testCases = [
   {
     name: "Page example",
-    input: `35
+    input: `preamble: 05
+35
 20
 15
 25
@@ -30,21 +31,28 @@ const testCases = [
   },
 ];
 
-function solution(input: string, extra?: ExtraArgs) {
+type Args = { nums: number[]; preambleLen: number; goal: number };
+
+function preprocess(input: string): Args {
+  let preambleLen: number;
+  if (input.startsWith("preamble: ")) {
+    preambleLen = +input.slice(10, 12);
+    input = input.slice(13);
+  } else {
+    preambleLen = 25;
+  }
   let nums = input
     .trim()
     .split("\n")
     .map((n) => parseInt(n, 10));
-  let preambleLen;
-  if (!extra?.preambleLen) preambleLen = 25;
-  else preambleLen = extra.preambleLen;
-  let p1 = part1(nums, preambleLen);
-  return { part1: p1, part2: part2(nums, p1) };
+  return { nums, preambleLen, goal: 0 };
 }
 
-function part1(nums: number[], preambleLen: number) {
+function part1(args: Args) {
+  let { nums, preambleLen } = args;
   for (let i = preambleLen; i < nums.length; i++) {
     if (!validate(nums.slice(i - preambleLen, i), nums[i])) {
+      args.goal = nums[i];
       return nums[i];
     }
   }
@@ -65,7 +73,7 @@ function validate(preamble: number[], num: number) {
   return false;
 }
 
-function part2(nums: number[], goal: number) {
+function part2({ nums, goal }: Args) {
   for (let i = 0; i < nums.length - 1; i++) {
     for (let j = i + 1; j < nums.length; j++) {
       let range = nums.slice(i, j);
@@ -77,8 +85,9 @@ function part2(nums: number[], goal: number) {
       }
     }
   }
+  throw new Error("Unexpected error");
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

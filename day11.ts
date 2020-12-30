@@ -16,7 +16,6 @@ L.LLLLL.LL
 `,
     part1: 37,
     part2: 26,
-    extra: {},
   },
 ];
 
@@ -24,15 +23,18 @@ interface NeighbourCounter {
   (room: string[][], row: number, col: number): number;
 }
 
-function solution(input: string) {
-  let room = input
+function preprocess(input: string) {
+  return input
     .trim()
     .split("\n")
     .map((row) => row.split(""));
-  return {
-    part1: solve(room, countNeighboursSimple, 4),
-    part2: solve(room, countNeighboursLineOfSight, 5),
-  };
+}
+
+function part1(room: string[][]) {
+  return solve(room, countNeighboursSimple, 4);
+}
+function part2(room: string[][]) {
+  return solve(room, countNeighboursLineOfSight, 5);
 }
 
 function solve(
@@ -40,20 +42,25 @@ function solve(
   countNeighbours: NeighbourCounter,
   moveCount: number
 ) {
+  let roomSize = room.length;
   function step() {
-    let newRoom = new Array(room.length);
-    for (const row of room.keys()) {
-      newRoom[row] = new Array(room[row].length);
-      for (const col of room[row].keys()) {
-        newRoom[row][col] = room[row][col];
-        if (room[row][col] === ".") {
+    let newRoom = new Array(roomSize);
+    for (let row = 0; row < roomSize; row++) {
+      let newRow = new Array(roomSize);
+      newRoom[row] = newRow;
+      for (let col = 0; col < roomSize; col++) {
+        let chair = room[row][col];
+        if (chair === ".") {
+          newRow[col] = chair;
           continue;
         }
         let neighbours = countNeighbours(room, row, col);
-        if (room[row][col] === "L" && neighbours === 0) {
-          newRoom[row][col] = "#";
-        } else if (room[row][col] === "#" && neighbours >= moveCount) {
-          newRoom[row][col] = "L";
+        if (chair === "L" && neighbours === 0) {
+          newRow[col] = "#";
+        } else if (chair === "#" && neighbours >= moveCount) {
+          newRow[col] = "L";
+        } else {
+          newRow[col] = chair;
         }
       }
     }
@@ -119,6 +126,6 @@ function countOccupied(room: string[][]) {
   return count;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

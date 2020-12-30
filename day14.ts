@@ -1,16 +1,15 @@
 import { buildCommandline } from "./AoC";
 
 const testCases = [
-  // Freezes part 2
-  //   {
-  //     name: "Page example",
-  //     input: `mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
-  // mem[8] = 11
-  // mem[7] = 101
-  // mem[8] = 0
-  // `,
-  //     part1: 165,
-  //   },
+  {
+    name: "Page example",
+    input: `mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
+  mem[8] = 11
+  mem[7] = 101
+  mem[8] = 0
+  `,
+    part1: 165,
+  },
   {
     name: "Page example 2",
     input: `mask = 000000000000000000000000000000X1001X
@@ -35,10 +34,10 @@ interface MemIxn {
 
 type Ixn = MaskIxn | MemIxn;
 
-function solution(input: string) {
+function preprocess(input: string) {
   let maskRegEx = /mask = (?<mask>[X01]{36})/;
   let memRegEx = /mem\[(?<addr>\d+)] = (?<value>\d+)/;
-  let prog: Ixn[] = input
+  return input
     .trim()
     .split("\n")
     .map(function (ixn): Ixn {
@@ -59,7 +58,6 @@ function solution(input: string) {
         throw new Error(`Unexpected line: ${ixn}`);
       }
     });
-  return { part1: part1(prog), part2: part2(prog) };
 }
 
 function part1(prog: Ixn[]) {
@@ -128,6 +126,6 @@ function part2(prog: Ixn[]) {
   return Array.from(result.mem.values()).reduce((a, b) => a + b);
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

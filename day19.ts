@@ -1,10 +1,25 @@
 import _ from "lodash";
-import { stdout } from "process";
 import { buildCommandline } from "./AoC";
 
 const testCases = [
   {
-    name: "Page example 3",
+    name: "Part 1 full example",
+    input: `0: 4 1 5
+1: 2 3 | 3 2
+2: 4 4 | 5 5
+3: 4 5 | 5 4
+4: "a"
+5: "b"
+
+ababbb
+bababa
+abbbab
+aaabbb
+aaaabbb`,
+    part1: 2,
+  },
+  {
+    name: "Part 2 example",
     input: `42: 9 14 | 10 1
 9: 14 27 | 1 26
 10: 23 14 | 28 1
@@ -58,33 +73,28 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba
   },
 ];
 
-function solution(input: string) {
+function preprocess(input: string) {
   let [rawRules, rawMessages] = input.trim().split("\n\n");
   let messages = rawMessages.split("\n");
   let rules: Rule[] = _(rawRules).split("\n").flatMap(Rule.fromString).value();
-  return {
-    part1: part1(messages, rules),
-    part2: part2(messages, rules),
-  };
+  return { messages, rules };
 }
 
-function part1(messages: string[], rules: Rule[]) {
+function part1({ messages, rules }: { messages: string[]; rules: Rule[] }) {
   let count = 0;
   let matcher = new Matcher(rules);
   let numMessages = messages.length;
   for (let i = 0; i < numMessages; i++) {
     if (matcher.match(messages[i])) count++;
-    if (i % 10 == 0) stdout.write(`\r${((i / numMessages) * 100).toFixed(4)}%`);
   }
-  stdout.write("\r100.0000%\n");
   return count;
 }
 
-function part2(messages: string[], rules: Rule[]) {
+function part2({ messages, rules }: { messages: string[]; rules: Rule[] }) {
   let looped = Array.from(rules);
   looped.push(new Rule("8", ["42", "8"]));
   looped.push(new Rule("11", ["42", "11", "31"]));
-  return part1(messages, looped);
+  return part1({ messages, rules: looped });
 }
 
 class Matcher {
@@ -261,6 +271,6 @@ class Table<T> {
   }
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

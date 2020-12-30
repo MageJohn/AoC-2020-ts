@@ -1,6 +1,5 @@
 import { buildCommandline } from "./AoC";
 import _ from "lodash";
-import { performance } from "perf_hooks";
 
 export const testCases = [
   {
@@ -137,7 +136,6 @@ export enum Side {
   Left,
 }
 const borderedSideLen = 10;
-const strippedSideLen = 8;
 const monster = [
   "                  # ",
   "#    ##    ##    ###",
@@ -146,12 +144,7 @@ const monster = [
 
 const monsterSections = 15;
 
-function solution(input: string) {
-  let imageTiles = transformInput(input);
-  return { part1: part1(imageTiles), part2: part2(imageTiles) };
-}
-
-export function transformInput(input: string) {
+export function preprocess(input: string) {
   let tiles = _(input.trim())
     .split("\n\n")
     .map((tile) => {
@@ -407,7 +400,6 @@ function transformSquare(square: string[], transform: Transform): string[] {
   let transformed = _(Array.from(square));
   switch (transform) {
     case Transform.Rot0: {
-      transformed = transformed;
       break;
     }
     case Transform.Rot90: {
@@ -456,7 +448,7 @@ function flipString(str: string): string {
   ]) as string;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);
 

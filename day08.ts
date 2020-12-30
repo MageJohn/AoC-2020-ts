@@ -28,7 +28,9 @@ interface VM {
   acc: number;
 }
 
-function solution(input: string) {
+type Args = { prog: Instruction[]; history: Set<number> };
+
+function preprocess(input: string): Args {
   let prog: Instruction[] = input
     .trim()
     .split("\n")
@@ -36,9 +38,16 @@ function solution(input: string) {
       let [op, arg] = line.split(" ");
       return { op, arg: +arg };
     });
+  return { prog, history: new Set() };
+}
 
-  let { final: part1Res, history } = run(prog);
+function part1(args: Args) {
+  let { final, history } = run(args.prog);
+  args.history = history;
+  return final.acc;
+}
 
+function part2({ prog, history }: Args) {
   let swapper: { [key: string]: string } = { jmp: "nop", nop: "jmp" };
   for (let historicState of history) {
     if (prog[historicState].op in swapper) {
@@ -50,7 +59,7 @@ function solution(input: string) {
 
       let { final } = run(fixProg);
       if (final.ip >= prog.length) {
-        return { part1: part1Res.acc, part2: final.acc };
+        return final.acc;
       }
     }
   }
@@ -82,6 +91,6 @@ function step(vm: VM, prog: Instruction[]) {
   }
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

@@ -23,14 +23,12 @@ FFFFFFFRLR
   },
 ];
 
-function solution(input: string) {
-  let passes = input
+function preprocess(input: string) {
+  return input
     .trim()
     .split("\n")
     .map(passToId)
     .sort((a, b) => a - b);
-
-  return { part1: part1(passes), part2: part2(passes) };
 }
 
 function part1(passes: number[]) {
@@ -45,12 +43,13 @@ function part2(passes: number[]) {
     }
     last = cur;
   }
+  throw new Error("No solution found");
 }
 
 function passToId(pass: string) {
   return parseInt(pass.replaceAll(/F|L/g, "0").replaceAll(/B|R/g, "1"), 2);
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

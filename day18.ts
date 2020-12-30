@@ -59,17 +59,22 @@ function isParen(token?: Token): token is Paren {
 
 // Solution
 /*---------*/
-function solution(input: string) {
-  let problems = input.trim().split("\n").map(lex);
-  let part1 = problems
-    .map(parseToRpn.bind(undefined, { "+": 0, "*": 0 }))
+function preprocess(input: string) {
+  return input.trim().split("\n").map(lex);
+}
+
+function part1(problems: Token[][]) {
+  return solve(problems, { "+": 0, "*": 0 });
+}
+function part2(problems: Token[][]) {
+  return solve(problems, { "+": 1, "*": 0 });
+}
+
+function solve(problems: Token[][], precedence: OperatorPrecedence) {
+  return problems
+    .map(parseToRpn.bind(undefined, precedence))
     .map(evalRpn)
     .reduce((a, b) => a + b);
-  let part2 = problems
-    .map(parseToRpn.bind(undefined, { "+": 1, "*": 0 }))
-    .map(evalRpn)
-    .reduce((a, b) => a + b);
-  return { part1, part2 };
 }
 
 function evalRpn(expression: Token[]): number {
@@ -181,6 +186,6 @@ function lex(expression: string): Token[] {
   return tokens;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

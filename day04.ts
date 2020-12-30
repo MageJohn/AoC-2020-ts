@@ -62,8 +62,8 @@ iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
   },
 ];
 
-function solution(input: string) {
-  let batch = input.split("\n\n").map((record) =>
+function preprocess(input: string) {
+  return input.split("\n\n").map((record) =>
     record
       .trim()
       .split("\n")
@@ -74,8 +74,6 @@ function solution(input: string) {
         new Map()
       )
   );
-
-  return { part1: part1(batch), part2: part2(batch) };
 }
 
 function part1(batch: Map<string, string>[]) {
@@ -127,6 +125,6 @@ function part2(batch: Map<string, string>[]) {
   }, 0);
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

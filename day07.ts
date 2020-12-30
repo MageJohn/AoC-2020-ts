@@ -34,8 +34,8 @@ const OWN_BAG = "shiny gold";
 
 type Rule = { outer: string; num: number; inner: string };
 
-function solution(input: string) {
-  let rules: Rule[] = input
+function preprocess(input: string) {
+  return input
     .trim()
     .split("\n")
     .reduce((arr, rule) => {
@@ -51,12 +51,10 @@ function solution(input: string) {
       }
       return arr;
     }, [] as Rule[]);
-
-  return { part1: part1(rules, OWN_BAG), part2: part2(rules, OWN_BAG) };
 }
 
-function part1(rules: Rule[], bag: string) {
-  let closure = new Set([bag]);
+function part1(rules: Rule[]) {
+  let closure = new Set([OWN_BAG]);
   let oldSize = 0;
   while (oldSize < closure.size) {
     oldSize = closure.size;
@@ -69,7 +67,7 @@ function part1(rules: Rule[], bag: string) {
   return closure.size - 1;
 }
 
-function part2(rules: Rule[], bag: string) {
+function part2(rules: Rule[]) {
   function recursive(outer: string) {
     let count = 1;
     rules.forEach((rule) => {
@@ -80,9 +78,9 @@ function part2(rules: Rule[], bag: string) {
     return count;
   }
 
-  return recursive(bag) - 1;
+  return recursive(OWN_BAG) - 1;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

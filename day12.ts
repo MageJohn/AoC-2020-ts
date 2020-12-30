@@ -8,11 +8,9 @@ N3
 F7
 R90
 F11
-L95
 `,
     part1: 25,
     part2: 286,
-    extra: {},
   },
 ];
 
@@ -21,8 +19,8 @@ interface Instruction {
   value: number;
 }
 
-function solution(input: string) {
-  let ixs: Instruction[] = input
+function preprocess(input: string) {
+  return input
     .trim()
     .split("\n")
     .map(
@@ -33,7 +31,6 @@ function solution(input: string) {
         }
     )
     .map((ix) => ({ ...ix, value: +ix.value }));
-  return { part1: part1(ixs), part2: part2(ixs) };
 }
 
 function part1(ixs: Instruction[]) {
@@ -148,6 +145,6 @@ function mod(n: number, m: number) {
   return ((n % m) + m) % m;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

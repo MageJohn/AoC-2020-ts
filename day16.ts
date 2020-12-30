@@ -31,6 +31,7 @@ nearby tickets:
 3,9,18
 15,1,5
 5,14,9`,
+    part1: 0,
     part2: 12,
   },
 ];
@@ -44,7 +45,7 @@ interface Data {
   nearbyTickets: Ticket[];
 }
 
-function solution(input: string) {
+function preprocess(input: string) {
   let [rawRules, rawMyTicket, rawNearbyTickets] = input.trim().split("\n\n");
 
   let rules: Rules = rawRules
@@ -65,21 +66,16 @@ function solution(input: string) {
     .slice(1)
     .map(parseTicket);
 
-  let data: Data = {
+  return {
     rules,
     myTicket,
     nearbyTickets,
   };
-
-  let { result: filtered, errorRate } = filterTickets(data);
-  data.nearbyTickets = filtered;
-
-  return { part1: errorRate, part2: part2(data) };
 }
 
-function filterTickets(data: Data) {
+function part1(data: Data) {
   let errorRate = 0;
-  let result: Ticket[] = data.nearbyTickets.filter((ticket) =>
+  data.nearbyTickets = data.nearbyTickets.filter((ticket) =>
     ticket.every((field) => {
       let valid = Array.from(data.rules.values()).some((range) =>
         range.has(field)
@@ -90,14 +86,14 @@ function filterTickets(data: Data) {
       return valid;
     })
   );
-  return { result, errorRate };
+  return errorRate;
 }
 
 function part2({ rules: fieldRules, myTicket, nearbyTickets }: Data) {
   let unmatchedFields = new Map(fieldRules);
   let fieldMapping: string[] = new Array(myTicket.length);
   while (unmatchedFields.size > 0) {
-    for (let i of myTicket.keys()) {
+    for (let i = 0, e = myTicket.length; i < e; i++) {
       let matchedFields = new Map(unmatchedFields);
       for (let ticket of nearbyTickets) {
         for (let [field, range] of unmatchedFields) {
@@ -115,7 +111,7 @@ function part2({ rules: fieldRules, myTicket, nearbyTickets }: Data) {
   }
 
   let result = 1;
-  for (let i of fieldMapping.keys()) {
+  for (let i = 0, e = fieldMapping.length; i < e; i++) {
     if (fieldMapping[i].startsWith("departure")) {
       result *= myTicket[i];
     }
@@ -162,6 +158,6 @@ class CompositeRange {
   }
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

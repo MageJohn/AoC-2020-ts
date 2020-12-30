@@ -12,7 +12,7 @@ const testCases = [
   },
 ];
 
-function solution(input: string) {
+function preprocess(input: string) {
   let inputSideLength = input.split("\n").length;
   let initialState3d = new PocketDimension(3, inputSideLength);
   let initialState4d = new PocketDimension(4, inputSideLength);
@@ -26,7 +26,14 @@ function solution(input: string) {
         initialState4d.set([x, y, 0, 0], state);
       })
     );
-  return { part1: boot(initialState3d), part2: boot(initialState4d) };
+  return { initialState3d, initialState4d };
+}
+
+function part1({ initialState3d }: { initialState3d: PocketDimension }) {
+  return boot(initialState3d);
+}
+function part2({ initialState4d }: { initialState4d: PocketDimension }) {
+  return boot(initialState4d);
 }
 
 function boot(initialState: PocketDimension) {
@@ -38,6 +45,8 @@ function boot(initialState: PocketDimension) {
 }
 
 function step(dimension: PocketDimension) {
+  let window = new PocketDimension(dimension.nDims, 3);
+  let windowCoords = Array.from(window.coords());
   // increase the side length by one on each end
   let stepped = new PocketDimension(dimension.nDims, dimension.sideLength + 2);
 
@@ -54,19 +63,18 @@ function step(dimension: PocketDimension) {
     stepped.set(coord, newStatus);
   }
   return stepped;
-}
 
-function countNeighbours(dimension: PocketDimension, coord: number[]) {
-  let count = 0;
-  let window = new PocketDimension(dimension.nDims, 3);
-  for (let delta of window.coords()) {
-    if (delta.some((n) => n != 1)) {
-      // if not the (hyper)cube being checked
-      let dCoord = delta.map((n, i) => coord[i] + (n - 1));
-      count += dimension.get(dCoord);
+  function countNeighbours(dimension: PocketDimension, coord: number[]) {
+    let count = 0;
+    for (let delta of windowCoords) {
+      if (delta.some((n) => n != 1)) {
+        // if not the (hyper)cube being checked
+        let dCoord = delta.map((n, i) => coord[i] + (n - 1));
+        count += dimension.get(dCoord);
+      }
     }
+    return count;
   }
-  return count;
 }
 
 class PocketDimension {
@@ -102,31 +110,37 @@ class PocketDimension {
   }
 
   *coords() {
-    for (let i of this._data.keys()) {
+    for (let i = 0, e = this._data.length; i < e; i++) {
       yield this.indexToCoord(i);
     }
   }
 
   private checkBound(coords: number[]) {
-    return coords.every((c) => c >= 0 && c < this.sideLength);
+    let sideLength = this.sideLength;
+    return coords.every((c) => c >= 0 && c < sideLength);
   }
 
   private coordToIndex(coords: number[]) {
-    return coords.reduce(
-      (index, coord, dim) => index + this.sideLength ** dim * coord
-    );
+    let index = 0;
+    let sideLength = this.sideLength;
+    for (let dim = 0, e = coords.length; dim < e; dim++) {
+      index += sideLength ** dim * coords[dim];
+    }
+    return index;
   }
 
   private indexToCoord(index: number) {
     let coords = new Array(this.nDims);
+    let sideLength = this.sideLength;
     for (let dim = this.nDims - 1; dim >= 0; dim--) {
-      coords[dim] = Math.trunc(index / this.sideLength ** dim);
-      index -= coords[dim] * this.sideLength ** dim;
+      let coord = Math.trunc(index / sideLength ** dim);
+      coords[dim] = coord;
+      index -= coord * sideLength ** dim;
     }
     return coords;
   }
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);

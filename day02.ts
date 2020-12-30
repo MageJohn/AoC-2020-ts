@@ -20,8 +20,8 @@ interface Record {
   pwd: string;
 }
 
-function solution(input: string) {
-  let db: Record[] = input
+function preprocess(input: string) {
+  return input
     .trim()
     .split("\n")
     .map((record) => {
@@ -32,10 +32,6 @@ function solution(input: string) {
 
       return { policy: policy, pwd: pwd };
     });
-
-  let solution1 = part1(db);
-  let solution2 = part2(db);
-  return { part1: solution1, part2: solution2 };
 }
 
 function part1(db: Record[]) {
@@ -68,6 +64,6 @@ function part2(db: Record[]) {
   return validCount;
 }
 
-let program = buildCommandline(solution, testCases);
+let program = buildCommandline(testCases, preprocess, part1, part2);
 
 program.parse(process.argv);
