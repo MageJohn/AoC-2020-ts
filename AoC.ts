@@ -60,9 +60,12 @@ function buildCommandline<T>(
 
           out.write("Input processing: ");
           let processedInput: T | null = null;
+          let start = performance.now();
           processedInput = preprocess(testCase.input);
+          let time = (performance.now() - start).toFixed(4);
           if (processedInput != null) {
             stdout.write(chalk.green("processed"));
+            if (program.perf) out.write(` (time: ${time})`);
           } else {
             stdout.write(chalk.red(`no output (${processedInput})`));
             return;
@@ -123,9 +126,12 @@ function buildCommandline<T>(
         out.indent();
 
         out.write("Input processing: ");
+        let start = performance.now();
         let processedInput = preprocess(input);
+        let time = (performance.now() - start).toFixed(4);
         if (processedInput) {
           out.write(chalk.green("success"));
+          if (program.perf) out.write(` (time: ${time})`);
         } else {
           out.write(chalk.red("no output") + ` (${processedInput})`);
           return;
