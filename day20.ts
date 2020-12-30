@@ -163,16 +163,27 @@ function part1(args: Args) {
   let image: TransformedTile[][] = Array(imageSide)
     .fill(0)
     .map(() => Array(imageSide));
-  function solve(row: number, col: number, tiles: BorderedTile[]): boolean {
+  function* cellOrderGenerator() {
+    for (let dr = 0, dc = 0; dr < imageSide; dr++, dc++) {
+      yield [dr, dc];
+      for (let row = dr + 1; row < imageSide; row++) {
+        yield [row, dc];
+      }
+      for (let col = dc + 1; col < imageSide; col++) {
+        yield [dr, col];
+      }
+    }
+  }
+  let cells = Array.from(cellOrderGenerator());
+  function solve(cell: number, tiles: BorderedTile[]): boolean {
     if (tiles.length === 0) {
       return true;
     }
 
+    let [row, col] = cells[cell];
+
     let above = image[row - 1]?.[col]?.side(Side.Bottom);
     let left = image[row]?.[col - 1]?.side(Side.Right);
-
-    let nextCol = (col + 1) % imageSide;
-    let nextRow = row + +(col + 1 === imageSide);
 
     for (let i = 0, e = tiles.length; i < e; i++) {
       let tile = tiles[i];
@@ -184,7 +195,7 @@ function part1(args: Args) {
         ) {
           image[row][col] = transformed;
           let without = tiles.slice(0, i).concat(tiles.slice(i + 1));
-          if (solve(nextRow, nextCol, without)) {
+          if (solve(cell + 1, without)) {
             return true;
           }
         }
@@ -192,7 +203,10 @@ function part1(args: Args) {
     }
     return false;
   }
-  solve(0, 0, Array.from(args.tiles));
+  let res = solve(0, Array.from(args.tiles));
+  if (!res) {
+    throw new Error("No solution found");
+  }
   args.image = image;
   let endIdx = image.length - 1;
   return (
