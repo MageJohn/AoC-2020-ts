@@ -110,9 +110,9 @@ class Matcher {
     for (let i = 0; i < this.rules.length; i++) {
       let rule = this.rules[i];
       this.rules[i] = new Rule(
-        nonTerminals[rule.lhs],
+        nonTerminals[rule.lhs].toString(),
         rule.rhs.map((sym) =>
-          ["a", "b"].includes(sym) ? sym : nonTerminals[sym]
+          ["a", "b"].includes(sym) ? sym : nonTerminals[sym].toString()
         )
       );
     }
@@ -129,7 +129,7 @@ class Matcher {
       let c = message[s];
       for (let { lhs, rhs } of rules) {
         if (rhs.length === 1 && rhs[0] === c) {
-          table.set([1, s, lhs], true);
+          table.set([1, s, +lhs], true);
         }
       }
     }
@@ -141,10 +141,10 @@ class Matcher {
             let { rhs, lhs } = rules[ruleI];
             if (rhs.length === 2) {
               if (
-                table.get([p, s, rhs[0]]) &&
-                table.get([l - p, s + p, rhs[1]])
+                table.get([p, s, +rhs[0]]) &&
+                table.get([l - p, s + p, +rhs[1]])
               ) {
-                table.set([l, s, lhs], true);
+                table.set([l, s, +lhs], true);
               }
             }
           }
@@ -243,12 +243,10 @@ class Rule {
 class Table<T> {
   private _data: Array<T>;
   private steps: number[];
-  private dimensions: number[];
 
   constructor(dimensions: number[], fill: T) {
     this._data = new Array<T>(dimensions.reduce((size, dim) => size * dim));
     this._data.fill(fill);
-    this.dimensions = dimensions;
 
     this.steps = [1];
     for (let [i, dim] of dimensions.slice(0, -1).entries()) {
