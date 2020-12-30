@@ -207,7 +207,6 @@ function part2(imageTiles: TransformedTile[][]) {
       }
     }
   }
-
   return roughness;
 }
 
@@ -370,10 +369,7 @@ function transformSquare(square: string[], transform: Transform): string[] {
       break;
     }
     case Transform.Rot180: {
-      transformed = transformed
-        .reverse()
-        .map(flipString)
-        .invokeMap(Array.prototype.join, "");
+      transformed = transformed.reverse().map(flipString);
       break;
     }
     case Transform.Rot270: {
@@ -402,7 +398,7 @@ function transformSquare(square: string[], transform: Transform): string[] {
 }
 
 function transpose(array: string[]) {
-  return _.zip(...array.map((s) => Array.from(s))).map((a) => a.join(""));
+  return _.unzip(array.map((s) => Array.from(s))).map((a) => a.join(""));
 }
 function flipString(str: string): string {
   return Array.prototype.reduceRight.apply(str, [
