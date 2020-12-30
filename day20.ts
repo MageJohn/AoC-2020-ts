@@ -150,7 +150,7 @@ export function preprocess(input: string) {
     .split("\n\n")
     .map((tile) => {
       let id = +tile.slice(5, 9);
-      let data = _.drop(tile, 11).join("").split("\n");
+      let data = tile.slice(11).split("\n");
       return new BorderedTile(id, data);
     })
     .value();
