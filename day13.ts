@@ -49,14 +49,21 @@ const testCases = [
 
 type ID = "x" | number;
 
-function preprocess(input: string) {
+function createSolver(input: string) {
   let [leaveAfterString, idsString] = input.split("\n") as [string, string];
   let leaveAfter = +leaveAfterString;
   let ids = idsString.split(",").map((id) => (+id ? +id : id)) as ID[];
-  return { leaveAfter, ids };
+  return {
+    part1() {
+      return part1(ids, leaveAfter);
+    },
+    part2() {
+      return part2(ids);
+    },
+  };
 }
 
-function part1({ ids, leaveAfter }: { ids: ID[]; leaveAfter: number }) {
+function part1(ids: ID[], leaveAfter: number) {
   let earliest = Infinity;
   let earliestId = -1;
   for (let id of ids) {
@@ -75,7 +82,7 @@ function part1({ ids, leaveAfter }: { ids: ID[]; leaveAfter: number }) {
   }
 }
 
-function part2({ ids }: { ids: ID[] }) {
+function part2(ids: ID[]) {
   let t = 0;
   let offset = 0;
   while (ids[offset] === "x" && offset < ids.length) offset++;
@@ -106,6 +113,6 @@ function gcd(a: number, b: number): number {
   return gcd(b, a % b);
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

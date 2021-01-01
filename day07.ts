@@ -34,8 +34,8 @@ const OWN_BAG = "shiny gold";
 
 type Rule = { outer: string; num: number; inner: string };
 
-function preprocess(input: string) {
-  return input
+function createSolver(input: string) {
+  let rules = input
     .trim()
     .split("\n")
     .reduce((arr, rule) => {
@@ -51,36 +51,37 @@ function preprocess(input: string) {
       }
       return arr;
     }, [] as Rule[]);
-}
-
-function part1(rules: Rule[]) {
-  let closure = new Set([OWN_BAG]);
-  let oldSize = 0;
-  while (oldSize < closure.size) {
-    oldSize = closure.size;
-    rules.forEach((rule) => {
-      if (closure.has(rule.inner)) {
-        closure.add(rule.outer);
+  return {
+    part1() {
+      let closure = new Set([OWN_BAG]);
+      let oldSize = 0;
+      while (oldSize < closure.size) {
+        oldSize = closure.size;
+        rules.forEach((rule) => {
+          if (closure.has(rule.inner)) {
+            closure.add(rule.outer);
+          }
+        });
       }
-    });
-  }
-  return closure.size - 1;
-}
+      return closure.size - 1;
+    },
 
-function part2(rules: Rule[]) {
-  function recursive(outer: string) {
-    let count = 1;
-    rules.forEach((rule) => {
-      if (rule.outer === outer) {
-        count += rule.num * recursive(rule.inner);
+    part2() {
+      function recursive(outer: string) {
+        let count = 1;
+        rules.forEach((rule) => {
+          if (rule.outer === outer) {
+            count += rule.num * recursive(rule.inner);
+          }
+        });
+        return count;
       }
-    });
-    return count;
-  }
 
-  return recursive(OWN_BAG) - 1;
+      return recursive(OWN_BAG) - 1;
+    },
+  };
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

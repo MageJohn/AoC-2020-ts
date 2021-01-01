@@ -20,27 +20,27 @@ const testCases = [
   },
 ];
 
-function preprocess(input: string) {
-  return input.trim().split("\n");
-}
-
-function part1(map: string[]) {
-  return countTrees(map, { x: 3, y: 1 });
-}
-
-function part2(map: string[]) {
-  let result = 1;
-  for (let slope of [
-    { x: 1, y: 1 },
-    { x: 3, y: 1 },
-    { x: 5, y: 1 },
-    { x: 7, y: 1 },
-    { x: 1, y: 2 },
-  ]) {
-    let res = countTrees(map, slope);
-    result = result * res;
-  }
-  return result;
+function createSolver(input: string) {
+  let map = input.trim().split("\n");
+  return {
+    part1() {
+      return countTrees(map, { x: 3, y: 1 });
+    },
+    part2() {
+      let result = 1;
+      for (let slope of [
+        { x: 1, y: 1 },
+        { x: 3, y: 1 },
+        { x: 5, y: 1 },
+        { x: 7, y: 1 },
+        { x: 1, y: 2 },
+      ]) {
+        let res = countTrees(map, slope);
+        result = result * res;
+      }
+      return result;
+    },
+  };
 }
 
 function countTrees(map: string[], slope: { x: number; y: number }) {
@@ -59,6 +59,6 @@ function countTrees(map: string[], slope: { x: number; y: number }) {
   return treeCount;
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

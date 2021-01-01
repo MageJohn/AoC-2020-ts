@@ -31,9 +31,7 @@ const testCases = [
   },
 ];
 
-type Args = { nums: number[]; preambleLen: number; goal: number };
-
-function preprocess(input: string): Args {
+function createSolver(input: string) {
   let preambleLen: number;
   if (input.startsWith("preamble: ")) {
     preambleLen = +input.slice(10, 12);
@@ -45,18 +43,32 @@ function preprocess(input: string): Args {
     .trim()
     .split("\n")
     .map((n) => parseInt(n, 10));
-  return { nums, preambleLen, goal: 0 };
-}
-
-function part1(args: Args) {
-  let { nums, preambleLen } = args;
-  for (let i = preambleLen; i < nums.length; i++) {
-    if (!validate(nums.slice(i - preambleLen, i), nums[i])) {
-      args.goal = nums[i];
-      return nums[i];
-    }
-  }
-  throw new Error("No solution found");
+  let goal = 0;
+  return {
+    part1() {
+      for (let i = preambleLen; i < nums.length; i++) {
+        if (!validate(nums.slice(i - preambleLen, i), nums[i])) {
+          goal = nums[i];
+          return nums[i];
+        }
+      }
+      throw new Error("No solution found");
+    },
+    part2() {
+      for (let i = 0; i < nums.length - 1; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+          let range = nums.slice(i, j);
+          let rangeTotal = range.reduce((a, b) => a + b);
+          if (rangeTotal === goal) {
+            return Math.min(...range) + Math.max(...range);
+          } else if (rangeTotal > goal) {
+            break;
+          }
+        }
+      }
+      throw new Error("Unexpected error");
+    },
+  };
 }
 
 function validate(preamble: number[], num: number) {
@@ -73,21 +85,6 @@ function validate(preamble: number[], num: number) {
   return false;
 }
 
-function part2({ nums, goal }: Args) {
-  for (let i = 0; i < nums.length - 1; i++) {
-    for (let j = i + 1; j < nums.length; j++) {
-      let range = nums.slice(i, j);
-      let rangeTotal = range.reduce((a, b) => a + b);
-      if (rangeTotal === goal) {
-        return Math.min(...range) + Math.max(...range);
-      } else if (rangeTotal > goal) {
-        break;
-      }
-    }
-  }
-  throw new Error("Unexpected error");
-}
-
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

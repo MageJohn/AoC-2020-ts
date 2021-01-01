@@ -12,7 +12,7 @@ const testCases = [
   },
 ];
 
-function preprocess(input: string) {
+function createSolver(input: string) {
   let inputSideLength = input.split("\n").length;
   let initialState3d = new PocketDimension(3, inputSideLength);
   let initialState4d = new PocketDimension(4, inputSideLength);
@@ -26,14 +26,14 @@ function preprocess(input: string) {
         initialState4d.set([x, y, 0, 0], state);
       })
     );
-  return { initialState3d, initialState4d };
-}
-
-function part1({ initialState3d }: { initialState3d: PocketDimension }) {
-  return boot(initialState3d);
-}
-function part2({ initialState4d }: { initialState4d: PocketDimension }) {
-  return boot(initialState4d);
+  return {
+    part1: function () {
+      return boot(initialState3d);
+    },
+    part2: function () {
+      return boot(initialState4d);
+    },
+  };
 }
 
 function boot(initialState: PocketDimension) {
@@ -141,6 +141,6 @@ class PocketDimension {
   }
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

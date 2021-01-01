@@ -45,7 +45,7 @@ interface Data {
   nearbyTickets: Ticket[];
 }
 
-function preprocess(input: string) {
+function createSolver(input: string) {
   let [rawRules, rawMyTicket, rawNearbyTickets] = input.trim().split("\n\n");
 
   let rules: Rules = rawRules
@@ -66,10 +66,19 @@ function preprocess(input: string) {
     .slice(1)
     .map(parseTicket);
 
-  return {
+  let data: Data = {
     rules,
     myTicket,
     nearbyTickets,
+  };
+
+  return {
+    part1: function () {
+      return part1(data);
+    },
+    part2: function () {
+      return part2(data);
+    },
   };
 }
 
@@ -158,6 +167,6 @@ class CompositeRange {
   }
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

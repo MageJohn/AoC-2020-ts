@@ -1,8 +1,10 @@
 import fs from "fs";
-import { program } from "commander";
+import { Command } from "commander";
 import chalk from "chalk";
 import { stdin, stdout } from "process";
 import { performance } from "perf_hooks";
+import { inspect } from "util";
+import { log } from "console";
 
 export { buildCommandline };
 
@@ -15,14 +17,16 @@ interface TestCase {
   part2?: Result;
 }
 
-function buildCommandline<T>(
-  testCases: TestCase[],
-  preprocess?: (input: string) => T | null,
-  part1?: (processedInput: T) => Result | null,
-  part2?: (processedInput: T) => Result | null
-) {
-  const out = new Writer();
-  return program
+interface Solver {
+  (input: string): SolverInstance;
+}
+interface SolverInstance {
+  part1: () => Result;
+  part2: () => Result;
+}
+
+function buildCommandline(testCases: TestCase[], createSolver: Solver) {
+  return new Command()
     .option(
       "-t, --test [testnumber...]",
       "run with test cases from problem statement"
@@ -30,201 +34,98 @@ function buildCommandline<T>(
     .option("-p, --perf", "output performance metrics")
     .arguments("[input_file]")
     .description("solution for this day", { input_file: "input text file" })
-    .action((inputFile) => {
-      if (preprocess == null) {
-        out.writeLine(
-          `${chalk.red("Error:")} no input processing function. Can't continue`
-        );
-        return;
-      }
-      if (part1 == null) {
-        out.writeLine(
-          `${chalk.yellow("Warning:")} no part 1 solution function`
-        );
-      }
-      if (part2 == null) {
-        out.writeLine(
-          `${chalk.yellow("Warning:")} no part 2 solution function`
-        );
-      }
+    .action((inputFile: string, args: Command) => {
+      if (args.test) {
+        log(chalk.underline("Tests:"));
 
-      if (program.test) {
-        out.writeLine(chalk.underline("Tests:"));
+        if (Array.isArray(args.test)) {
+          testCases = testCases.filter((_v, i) => args.test.includes(i));
+        }
 
-        testCases.forEach((testCase, i) => {
-          if (Array.isArray(program.test) && !program.test.includes(`${i}`)) {
-            return;
+        testCases.forEach((testCase) => {
+          log(`${testCase.name}:`);
+          let { res: solver, perf } = perfWrapper(createSolver)(testCase.input);
+          if (args.perf) {
+            log(`    Startup time: ${perf.toFixed(4)}`);
           }
-          out.writeLine(`${testCase.name}:`);
-          out.indent();
-
-          out.write("Input processing: ");
-          let processedInput: T | null = null;
-          let start = performance.now();
-          processedInput = preprocess(testCase.input);
-          let time = (performance.now() - start).toFixed(4);
-          if (processedInput != null) {
-            stdout.write(chalk.green("processed"));
-            if (program.perf) out.write(` (time: ${time})`);
-          } else {
-            stdout.write(chalk.red(`no output (${processedInput})`));
-            return;
-          }
-          out.newline();
-
-          out.write("Part 1: ");
-          if (testCase.part1 == null) {
-            out.write(chalk.yellow("no test case"));
-          } else if (part1) {
-            let start = performance.now();
-            let result = part1(processedInput);
-            let time = (performance.now() - start).toFixed(4);
-            out.write(
-              result === testCase.part1
-                ? chalk.green(`${result}`)
-                : chalk.red(`${result} != ${testCase.part1}`)
-            );
-            if (program.perf) out.write(` (time: ${time})`);
-          } else {
-            out.write(chalk.yellow("no function"));
-          }
-          out.newline();
-
-          out.write("Part 2: ");
-          if (testCase.part2 == null) {
-            out.write(chalk.yellow("no test case"));
-          } else if (part2) {
-            let start = performance.now();
-            let result = part2(processedInput);
-            let time = (performance.now() - start).toFixed(4);
-            out.write(
-              result === testCase.part2
-                ? chalk.green(`${result}`)
-                : chalk.red(`${result} != ${testCase.part2}`)
-            );
-            if (program.perf) out.write(` (time: ${time})`);
-          } else {
-            out.write(chalk.yellow("no function"));
-          }
-          out.newline();
-          out.deindent();
+          runPartTest(
+            1,
+            perfWrapper(solver.part1.bind(solver)),
+            testCase.part1,
+            args.perf
+          );
+          runPartTest(
+            2,
+            perfWrapper(solver.part2.bind(solver)),
+            testCase.part2,
+            args.perf
+          );
         });
-        out.newline();
+        stdout.write("\n");
       }
 
       if (inputFile) {
-        let fd;
-        if (inputFile === "-") {
-          fd = stdin.fd;
-        } else {
-          fd = fs.openSync(inputFile, "r");
-        }
+        let fd = inputFile === "-" ? stdin.fd : fs.openSync(inputFile, "r");
         let input = fs.readFileSync(fd, { encoding: "utf8" });
         fs.closeSync(fd);
 
-        out.writeLine(chalk.underline("Solution: "));
-        out.indent();
+        log(chalk.underline("Solution: "));
 
-        out.write("Input processing: ");
-        let start = performance.now();
-        let processedInput = preprocess(input);
-        let time = (performance.now() - start).toFixed(4);
-        if (processedInput) {
-          out.write(chalk.green("success"));
-          if (program.perf) out.write(` (time: ${time})`);
-        } else {
-          out.write(chalk.red("no output") + ` (${processedInput})`);
-          return;
+        let { res: solver, perf } = perfWrapper(createSolver)(input);
+        if (args.perf) {
+          log(`    Startup time: ${perf.toFixed(4)}`);
         }
-        out.newline();
 
-        out.write("Part 1: ");
-        if (part1) {
-          let start = performance.now();
-          let result = part1(processedInput);
-          let time = (performance.now() - start).toFixed(4);
-          if (result != null) {
-            out.write(`${result}`);
-          } else {
-            out.write(chalk.yellow(`${result}`));
-          }
-          if (program.perf) out.write(` (time: ${time})`);
-        } else {
-          out.write(chalk.yellow("no function"));
-        }
-        out.newline();
-
-        out.write("Part 2: ");
-        if (part2) {
-          let start = performance.now();
-          let result = part2(processedInput);
-          let time = (performance.now() - start).toFixed(4);
-          if (result != null) {
-            out.write(`${result}`);
-          } else {
-            out.write(chalk.yellow(`${result}`));
-          }
-          if (program.perf) out.write(` (time: ${time})`);
-        } else {
-          out.write(chalk.yellow("no function"));
-        }
-        out.newline();
-
-        out.deindent();
+        runPart(1, perfWrapper(solver.part1.bind(solver)), args.perf);
+        runPart(2, perfWrapper(solver.part2.bind(solver)), args.perf);
       }
     });
 }
 
-export class Writer {
-  private _indentLevel = 0;
-  private _indentStep = 4;
-  private indentation = "";
-  private lineStart = true;
+function runPart(
+  part: number,
+  func: () => { perf: number; res: Result },
+  showPerf: boolean
+): void {
+  stdout.write(`    Part ${part}: `);
+  let result = func();
+  let outColor = result.res == null ? chalk.red : chalk.green;
+  stdout.write(outColor(`${inspect(result.res)}`));
+  if (showPerf) {
+    stdout.write(` (${result.perf.toFixed(4)})`);
+  }
+  stdout.write("\n");
+}
 
-  write(value: string) {
-    if (this.lineStart) {
-      stdout.write(this.indentation);
+function runPartTest(
+  part: number,
+  func: () => { perf: number; res: Result },
+  expected: Result | undefined,
+  showPerf: boolean
+): void {
+  stdout.write(`    Part ${part}: `);
+  if (expected == null) {
+    stdout.write(chalk.yellow("no test case"));
+  } else {
+    let result = func();
+    if (result.res === expected) {
+      stdout.write(chalk.green(`${inspect(result.res)}`));
+    } else {
+      stdout.write(
+        chalk.red(`${inspect(result.res)} !== ${inspect(expected)}`)
+      );
     }
-    stdout.write(value.replace(/\n(.)/g, "\n" + this.indentation + "$1"));
-    this.lineStart = value[value.length - 1] === "\n";
+    if (showPerf) {
+      stdout.write(` (${result.perf.toFixed(4)})`);
+    }
   }
+  stdout.write("\n");
+}
 
-  writeLine(value: string) {
-    this.write(value);
-    this.newline();
-  }
-
-  newline() {
-    stdout.write("\n");
-    this.lineStart = true;
-  }
-
-  indent() {
-    this.indentLevel++;
-  }
-  deindent() {
-    this.indentLevel--;
-  }
-
-  get indentLevel(): number {
-    return this._indentLevel;
-  }
-  set indentLevel(value: number) {
-    this._indentLevel = value;
-    this.reindent();
-  }
-
-  get indentStep(): number {
-    return this._indentStep;
-  }
-  set indentStep(value: number) {
-    this._indentStep = value;
-    this.reindent();
-  }
-
-  private reindent() {
-    this.indentation = Array(this._indentLevel * this._indentStep)
-      .fill(" ")
-      .join("");
-  }
+function perfWrapper<T extends any[], U>(fn: (...args: T) => U) {
+  return (...args: T): { perf: number; res: U } => {
+    let start = performance.now();
+    let res = fn(...args);
+    return { perf: performance.now() - start, res };
+  };
 }

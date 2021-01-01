@@ -28,9 +28,7 @@ interface VM {
   acc: number;
 }
 
-type Args = { prog: Instruction[]; history: Set<number> };
-
-function preprocess(input: string): Args {
+function createSolver(input: string) {
   let prog: Instruction[] = input
     .trim()
     .split("\n")
@@ -38,32 +36,35 @@ function preprocess(input: string): Args {
       let [op, arg] = line.split(" ");
       return { op, arg: +arg };
     });
-  return { prog, history: new Set() };
-}
-
-function part1(args: Args) {
-  let { final, history } = run(args.prog);
-  args.history = history;
-  return final.acc;
-}
-
-function part2({ prog, history }: Args) {
-  let swapper: { [key: string]: string } = { jmp: "nop", nop: "jmp" };
-  for (let historicState of history) {
-    if (prog[historicState].op in swapper) {
-      let fixProg = [...prog];
-      fixProg[historicState] = {
-        op: swapper[prog[historicState].op],
-        arg: prog[historicState].arg,
-      };
-
-      let { final } = run(fixProg);
-      if (final.ip >= prog.length) {
-        return final.acc;
+  let history: Set<number> | undefined;
+  return {
+    part1() {
+      let { final, history: _history } = run(prog);
+      history = _history;
+      return final.acc;
+    },
+    part2() {
+      let swapper: { [key: string]: string } = { jmp: "nop", nop: "jmp" };
+      if (!history) {
+        throw new Error("Run part 1 first");
       }
-    }
-  }
-  throw new Error("No solution found: check the input");
+      for (let historicState of history) {
+        if (prog[historicState].op in swapper) {
+          let fixProg = [...prog];
+          fixProg[historicState] = {
+            op: swapper[prog[historicState].op],
+            arg: prog[historicState].arg,
+          };
+
+          let { final } = run(fixProg);
+          if (final.ip >= prog.length) {
+            return final.acc;
+          }
+        }
+      }
+      throw new Error("No solution found: check the input");
+    },
+  };
 }
 
 function run(prog: Instruction[]) {
@@ -91,6 +92,6 @@ function step(vm: VM, prog: Instruction[]) {
   }
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

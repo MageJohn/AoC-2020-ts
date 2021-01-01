@@ -23,33 +23,34 @@ FFFFFFFRLR
   },
 ];
 
-function preprocess(input: string) {
-  return input
+function createSolver(input: string) {
+  let passes = input
     .trim()
     .split("\n")
     .map(passToId)
     .sort((a, b) => a - b);
-}
+  return {
+    part1() {
+      return passes[passes.length - 1];
+    },
 
-function part1(passes: number[]) {
-  return passes[passes.length - 1];
-}
-
-function part2(passes: number[]) {
-  let last = passes[0];
-  for (let cur of passes.slice(1)) {
-    if (last + 2 == cur) {
-      return last + 1;
-    }
-    last = cur;
-  }
-  throw new Error("No solution found");
+    part2() {
+      let last = passes[0];
+      for (let cur of passes.slice(1)) {
+        if (last + 2 == cur) {
+          return last + 1;
+        }
+        last = cur;
+      }
+      throw new Error("No solution found");
+    },
+  };
 }
 
 function passToId(pass: string) {
   return parseInt(pass.replaceAll(/F|L/g, "0").replaceAll(/B|R/g, "1"), 2);
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

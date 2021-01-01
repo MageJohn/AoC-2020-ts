@@ -62,8 +62,8 @@ iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
   },
 ];
 
-function preprocess(input: string) {
-  return input.split("\n\n").map((record) =>
+function createSolver(input: string) {
+  let batch = input.split("\n\n").map((record) =>
     record
       .trim()
       .split("\n")
@@ -74,57 +74,58 @@ function preprocess(input: string) {
         new Map()
       )
   );
+  return {
+    part1() {
+      return batch.reduce(
+        (acc, record) =>
+          acc + +(record.size == 8 || (record.size == 7 && !record.has("cid"))),
+        0
+      );
+    },
+
+    part2() {
+      return batch.reduce((acc, r) => {
+        let byr = r.get("byr"),
+          iyr = r.get("iyr"),
+          eyr = r.get("eyr"),
+          hgt = r.get("hgt"),
+          hcl = r.get("hcl"),
+          ecl = r.get("ecl"),
+          pid = r.get("pid");
+
+        if (
+          byr != null &&
+          iyr != null &&
+          eyr != null &&
+          hgt != null &&
+          hcl != null &&
+          ecl != null &&
+          pid != null
+        ) {
+          let hgtInt = parseInt(hgt, 10);
+          let valid =
+            true &&
+            +byr >= 1920 &&
+            +byr <= 2002 &&
+            +iyr >= 2010 &&
+            +iyr <= 2020 &&
+            +eyr >= 2020 &&
+            +eyr <= 2030 &&
+            ((hgt.endsWith("cm") && hgtInt >= 150 && hgtInt <= 193) ||
+              (hgt.endsWith("in") && hgtInt >= 59 && hgtInt <= 76)) &&
+            /^#[0-9a-f]{6}$/.test(hcl) &&
+            ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].includes(ecl) &&
+            /^\d{9}$/.test(pid);
+
+          return acc + +valid;
+        } else {
+          return acc;
+        }
+      }, 0);
+    },
+  };
 }
 
-function part1(batch: Map<string, string>[]) {
-  return batch.reduce(
-    (acc, record) =>
-      acc + +(record.size == 8 || (record.size == 7 && !record.has("cid"))),
-    0
-  );
-}
-
-function part2(batch: Map<string, string>[]) {
-  return batch.reduce((acc, r) => {
-    let byr = r.get("byr"),
-      iyr = r.get("iyr"),
-      eyr = r.get("eyr"),
-      hgt = r.get("hgt"),
-      hcl = r.get("hcl"),
-      ecl = r.get("ecl"),
-      pid = r.get("pid");
-
-    if (
-      byr != null &&
-      iyr != null &&
-      eyr != null &&
-      hgt != null &&
-      hcl != null &&
-      ecl != null &&
-      pid != null
-    ) {
-      let hgtInt = parseInt(hgt, 10);
-      let valid =
-        true &&
-        +byr >= 1920 &&
-        +byr <= 2002 &&
-        +iyr >= 2010 &&
-        +iyr <= 2020 &&
-        +eyr >= 2020 &&
-        +eyr <= 2030 &&
-        ((hgt.endsWith("cm") && hgtInt >= 150 && hgtInt <= 193) ||
-          (hgt.endsWith("in") && hgtInt >= 59 && hgtInt <= 76)) &&
-        /^#[0-9a-f]{6}$/.test(hcl) &&
-        ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].includes(ecl) &&
-        /^\d{9}$/.test(pid);
-
-      return acc + +valid;
-    } else {
-      return acc;
-    }
-  }, 0);
-}
-
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

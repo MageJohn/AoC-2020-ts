@@ -45,18 +45,20 @@ const testCases = [
   },
 ];
 
-function preprocess(input: string) {
-  return input
+function createSolver(input: string) {
+  let startingNums = input
     .trim()
     .split(",")
     .map((n) => parseInt(n, 10));
-}
 
-function part1(startingNums: number[]) {
-  return playTil(startingNums, 2020);
-}
-function part2(startingNums: number[]) {
-  return playTil(startingNums, 30000000);
+  return {
+    part1() {
+      return playTil(startingNums, 2020);
+    },
+    part2() {
+      return playTil(startingNums, 30000000);
+    },
+  };
 }
 
 function playTil(startingNums: number[], endTurn: number): number {
@@ -76,6 +78,6 @@ function playTil(startingNums: number[], endTurn: number): number {
   return speakNext;
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

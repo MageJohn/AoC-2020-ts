@@ -73,14 +73,21 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba
   },
 ];
 
-function preprocess(input: string) {
+function createSolver(input: string) {
   let [rawRules, rawMessages] = input.trim().split("\n\n");
   let messages = rawMessages.split("\n");
   let rules: Rule[] = _(rawRules).split("\n").flatMap(Rule.fromString).value();
-  return { messages, rules };
+  return {
+    part1: function () {
+      return part1(messages, rules);
+    },
+    part2: function () {
+      return part2(messages, rules);
+    },
+  };
 }
 
-function part1({ messages, rules }: { messages: string[]; rules: Rule[] }) {
+function part1(messages: string[], rules: Rule[]) {
   let count = 0;
   let matcher = new Matcher(rules);
   let numMessages = messages.length;
@@ -90,11 +97,11 @@ function part1({ messages, rules }: { messages: string[]; rules: Rule[] }) {
   return count;
 }
 
-function part2({ messages, rules }: { messages: string[]; rules: Rule[] }) {
+function part2(messages: string[], rules: Rule[]) {
   let looped = Array.from(rules);
   looped.push(new Rule("8", ["42", "8"]));
   looped.push(new Rule("11", ["42", "11", "31"]));
-  return part1({ messages, rules: looped });
+  return part1(messages, looped);
 }
 
 class Matcher {
@@ -269,6 +276,6 @@ class Table<T> {
   }
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

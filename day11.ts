@@ -23,18 +23,19 @@ interface NeighbourCounter {
   (room: string[][], row: number, col: number): number;
 }
 
-function preprocess(input: string) {
-  return input
+function createSolver(input: string) {
+  let room = input
     .trim()
     .split("\n")
     .map((row) => row.split(""));
-}
-
-function part1(room: string[][]) {
-  return solve(room, countNeighboursSimple, 4);
-}
-function part2(room: string[][]) {
-  return solve(room, countNeighboursLineOfSight, 5);
+  return {
+    part1() {
+      return solve(room, countNeighboursSimple, 4);
+    },
+    part2() {
+      return solve(room, countNeighboursLineOfSight, 5);
+    },
+  };
 }
 
 function solve(
@@ -126,6 +127,6 @@ function countOccupied(room: string[][]) {
   return count;
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

@@ -9,12 +9,13 @@ const testCases = [
   },
 ];
 
-function preprocess(input: string) {}
+function createSolver(input: string) {
+  return {
+    part1() {},
+    part2() {},
+  };
+}
 
-function part1() {}
-
-function part2() {}
-
-let program = buildCommandline(testCases);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

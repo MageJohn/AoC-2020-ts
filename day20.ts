@@ -144,9 +144,12 @@ const monster = [
 
 const monsterSections = 15;
 
-type Args = { tiles: BorderedTile[]; image: TransformedTile[][] | null };
+interface Args {
+  tiles: BorderedTile[];
+  image: TransformedTile[][] | null;
+}
 
-function preprocess(input: string): Args {
+function createSolver(input: string) {
   let tiles = _(input.trim())
     .split("\n\n")
     .map((tile) => {
@@ -155,7 +158,16 @@ function preprocess(input: string): Args {
       return new BorderedTile(id, data);
     })
     .value();
-  return { tiles, image: null };
+  return {
+    tiles,
+    image: null,
+    part1: function () {
+      return part1(this);
+    },
+    part2: function () {
+      return part2(this);
+    },
+  };
 }
 
 function part1(args: Args) {
@@ -420,6 +432,6 @@ function flipString(str: string): string {
   ]) as string;
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

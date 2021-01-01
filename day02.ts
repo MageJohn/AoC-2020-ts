@@ -20,8 +20,8 @@ interface Record {
   pwd: string;
 }
 
-function preprocess(input: string) {
-  return input
+function createSolver(input: string) {
+  let db = input
     .trim()
     .split("\n")
     .map((record) => {
@@ -32,38 +32,42 @@ function preprocess(input: string) {
 
       return { policy: policy, pwd: pwd };
     });
+  return {
+    part1() {
+      let validCount = 0;
+      db.forEach((record) => {
+        let charCount = [].filter.call(
+          record.pwd,
+          (char) => char == record.policy.char
+        ).length;
+        if (
+          charCount >= record.policy.lower &&
+          charCount <= record.policy.upper
+        ) {
+          validCount++;
+        }
+      });
+      return validCount;
+    },
+
+    part2() {
+      let validCount = 0;
+      db.forEach((record) => {
+        let {
+          policy: { lower: a, upper: b, char },
+          pwd,
+        } = record;
+        a--;
+        b--;
+        if (pwd[a] == char ? !(pwd[b] == char) : pwd[b] == char) {
+          validCount++;
+        }
+      });
+      return validCount;
+    },
+  };
 }
 
-function part1(db: Record[]) {
-  let validCount = 0;
-  db.forEach((record) => {
-    let charCount = [].filter.call(
-      record.pwd,
-      (char) => char == record.policy.char
-    ).length;
-    if (charCount >= record.policy.lower && charCount <= record.policy.upper) {
-      validCount++;
-    }
-  });
-  return validCount;
-}
-
-function part2(db: Record[]) {
-  let validCount = 0;
-  db.forEach((record) => {
-    let {
-      policy: { lower: a, upper: b, char },
-      pwd,
-    } = record;
-    a--;
-    b--;
-    if (pwd[a] == char ? !(pwd[b] == char) : pwd[b] == char) {
-      validCount++;
-    }
-  });
-  return validCount;
-}
-
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

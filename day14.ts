@@ -34,10 +34,10 @@ interface MemIxn {
 
 type Ixn = MaskIxn | MemIxn;
 
-function preprocess(input: string) {
+function createSolver(input: string) {
   let maskRegEx = /mask = (?<mask>[X01]{36})/;
   let memRegEx = /mem\[(?<addr>\d+)] = (?<value>\d+)/;
-  return input
+  let prog = input
     .trim()
     .split("\n")
     .map(function (ixn): Ixn {
@@ -58,6 +58,14 @@ function preprocess(input: string) {
         throw new Error(`Unexpected line: ${ixn}`);
       }
     });
+  return {
+    part1() {
+      return part1(prog);
+    },
+    part2() {
+      return part2(prog);
+    },
+  };
 }
 
 function part1(prog: Ixn[]) {
@@ -126,6 +134,6 @@ function part2(prog: Ixn[]) {
   return Array.from(result.mem.values()).reduce((a, b) => a + b);
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);

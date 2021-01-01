@@ -57,12 +57,20 @@ const testCases = [
   },
 ];
 
-function preprocess(input: string) {
-  return input
+function createSolver(input: string) {
+  let adaptors = input
     .trim()
     .split("\n")
     .map((a) => parseInt(a, 10))
     .sort((a, b) => a - b);
+  return {
+    part1() {
+      return part1(adaptors);
+    },
+    part2() {
+      return part2(adaptors);
+    },
+  };
 }
 
 function part1(adaptors: number[]) {
@@ -88,6 +96,6 @@ function part2(adaptors: number[]) {
   return table[table.length - 1];
 }
 
-let program = buildCommandline(testCases, preprocess, part1, part2);
+let program = buildCommandline(testCases, createSolver);
 
 program.parse(process.argv);
