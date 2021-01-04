@@ -16,7 +16,7 @@ function createSolver(input: string) {
   return {
     part1() {
       let cups = new Cups(startCups, max);
-      playGame(cups, 100, 9);
+      playGame(cups, 100, max);
       cups.rotateTo(1);
       return cups.toString().slice(1);
     },
