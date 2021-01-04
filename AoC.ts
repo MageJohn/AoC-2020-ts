@@ -19,7 +19,7 @@ interface TestCase {
 }
 
 interface Solver {
-  (input: string): SolverInstance;
+  (input: string, args?: Command): SolverInstance;
 }
 interface SolverInstance {
   part1: PartFunc;
@@ -45,7 +45,10 @@ function buildCommandline(testCases: TestCase[], createSolver: Solver) {
 
         for (let testCase of testCases) {
           log(`${testCase.name}:`);
-          let { res: solver, perf } = perfWrapper(createSolver)(testCase.input);
+          let { res: solver, perf } = perfWrapper(createSolver)(
+            testCase.input,
+            args
+          );
           if (args.perf) {
             log(`    Startup time: ${perf.toFixed(4)}`);
           }
