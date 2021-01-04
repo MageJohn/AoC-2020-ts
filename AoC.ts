@@ -1,7 +1,7 @@
 import fs from "fs";
 import { Command } from "commander";
 import chalk from "chalk";
-import { stdin, stdout } from "process";
+import { stdout } from "process";
 import { performance } from "perf_hooks";
 import { inspect } from "util";
 import { log } from "console";
@@ -9,6 +9,7 @@ import { log } from "console";
 export { buildCommandline };
 
 type Result = string | number;
+type PartFunc = () => Promise<Result> | Result;
 
 interface TestCase {
   name: string;
@@ -21,8 +22,8 @@ interface Solver {
   (input: string): SolverInstance;
 }
 interface SolverInstance {
-  part1: () => Result;
-  part2: () => Result;
+  part1: PartFunc;
+  part2: PartFunc;
 }
 
 function buildCommandline(testCases: TestCase[], createSolver: Solver) {
@@ -34,7 +35,7 @@ function buildCommandline(testCases: TestCase[], createSolver: Solver) {
     .option("-p, --perf", "output performance metrics")
     .arguments("[input_file]")
     .description("solution for this day", { input_file: "input text file" })
-    .action((inputFile: string, args: Command) => {
+    .action(async (inputFile: string, args: Command) => {
       if (args.test) {
         log(chalk.underline("Tests:"));
 
@@ -42,78 +43,77 @@ function buildCommandline(testCases: TestCase[], createSolver: Solver) {
           testCases = testCases.filter((_v, i) => args.test.includes(i));
         }
 
-        testCases.forEach((testCase) => {
+        for (let testCase of testCases) {
           log(`${testCase.name}:`);
           let { res: solver, perf } = perfWrapper(createSolver)(testCase.input);
           if (args.perf) {
             log(`    Startup time: ${perf.toFixed(4)}`);
           }
-          runPartTest(
+          await runPartTest(
             1,
             perfWrapper(solver.part1.bind(solver)),
             testCase.part1,
             args.perf
           );
-          runPartTest(
+          await runPartTest(
             2,
             perfWrapper(solver.part2.bind(solver)),
             testCase.part2,
             args.perf
           );
-        });
+        }
         stdout.write("\n");
       }
 
       if (inputFile) {
-        let fd = inputFile === "-" ? stdin.fd : fs.openSync(inputFile, "r");
-        let input = fs.readFileSync(fd, { encoding: "utf8" });
-        fs.closeSync(fd);
+        let path = inputFile === "-" ? "/dev/stdin" : inputFile;
+        let input = await fs.promises.readFile(path, { encoding: "utf8" });
 
         log(chalk.underline("Solution: "));
 
-        let { res: solver, perf } = perfWrapper(createSolver)(input);
+        let { res: solver, perf } = perfWrapper(createSolver)(input, args);
         if (args.perf) {
           log(`    Startup time: ${perf.toFixed(4)}`);
         }
 
-        runPart(1, perfWrapper(solver.part1.bind(solver)), args.perf);
-        runPart(2, perfWrapper(solver.part2.bind(solver)), args.perf);
+        await runPart(1, perfWrapper(solver.part1.bind(solver)), args.perf);
+        await runPart(2, perfWrapper(solver.part2.bind(solver)), args.perf);
       }
     });
 }
 
-function runPart(
+async function runPart(
   part: number,
-  func: () => { perf: number; res: Result },
+  func: () => { perf: number; res: Result | Promise<Result> },
   showPerf: boolean
-): void {
+): Promise<void> {
   stdout.write(`    Part ${part}: `);
   let result = func();
-  let outColor = result.res == null ? chalk.red : chalk.green;
-  stdout.write(outColor(`${inspect(result.res)}`));
+  let resultVal = await result.res;
+  let outColor = resultVal == null ? chalk.red : chalk.green;
+  stdout.write(outColor(`${inspect(resultVal)}`));
   if (showPerf) {
     stdout.write(` (${result.perf.toFixed(4)})`);
   }
   stdout.write("\n");
 }
 
-function runPartTest(
+async function runPartTest(
   part: number,
-  func: () => { perf: number; res: Result },
+  func: () => { perf: number; res: Result | Promise<Result> },
   expected: Result | undefined,
   showPerf: boolean
-): void {
+): Promise<void> {
   stdout.write(`    Part ${part}: `);
   if (expected == null) {
     stdout.write(chalk.yellow("no test case"));
   } else {
     let result = func();
-    if (result.res === expected) {
-      stdout.write(chalk.green(`${inspect(result.res)}`));
+    let resultVal = await result.res;
+    if (resultVal === expected) {
+      stdout.write(chalk.green(`${inspect(resultVal)}`));
     } else {
-      stdout.write(
-        chalk.red(`${inspect(result.res)} !== ${inspect(expected)}`)
-      );
+      stdout.write(chalk.red(`${inspect(resultVal)} !== ${inspect(expected)}`));
     }
     if (showPerf) {
       stdout.write(` (${result.perf.toFixed(4)})`);
