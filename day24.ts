@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { stdout } from "process";
 import { buildCommandline } from "./AoC";
-import timersPromises from "timers/promises";
 import { Command } from "commander";
 
 const { max, min, abs, trunc } = Math;
@@ -54,7 +53,7 @@ type Step =
     };
 const defaultTileset = { black: "⬢", white: "⬡" };
 
-function createSolver(input: string, args: Command) {
+function createSolver(input: string, args?: Command) {
   let moveLists = input
     .trim()
     .split("\n")
@@ -115,7 +114,7 @@ function createSolver(input: string, args: Command) {
         steps.push(step);
         floor = newFloor;
       }
-      if (args.vis) {
+      if (args?.vis) {
         animateFloor(steps, args.vis);
       }
       return floor.size;
@@ -352,14 +351,14 @@ async function animateFloor(steps: Step[], speed: number = 75) {
   }
 }
 
-function moveCursor(dy) {
+function moveCursor(dy: number) {
   if (stdout.moveCursor) {
     stdout.moveCursor(0, dy);
   }
 }
 
 async function delay(ms: number) {
-  await timersPromises.setTimeout(ms);
+  await new Promise((resolve) => setTimeout(() => resolve(null), ms));
 }
 
 let program = buildCommandline(testCases, createSolver);
