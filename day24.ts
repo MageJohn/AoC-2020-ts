@@ -51,7 +51,7 @@ type Step =
   | {
       type: "pause";
     };
-const defaultTileset = { black: "⬢", white: "⬡" };
+const defaultTileset = { black: "⬢", white: "⬡", flip: "|" };
 
 function createSolver(input: string, args?: Command) {
   let moveLists = input
@@ -320,7 +320,7 @@ async function animateFloor(steps: Step[], speed: number = 75) {
         floorString = floorToString(floor, (pos, tile) =>
           defaultStylize(
             pos,
-            flips.some((flip) => flip.equals(pos)) ? "|" : tile
+            flips.some((flip) => flip.equals(pos)) ? defaultTileset.flip : tile
           )
         );
         stdout.write(floorString);
